@@ -400,12 +400,15 @@ def original_head_visibility(layers: list[Layer], originals: list[Layer]) -> Non
             p.meta['psd_visibility'] = 'reversible original-depth occlusion mask; complete PNG retained'
 
 
-def merge_clothes(name: str, layers: list[Layer], info: dict) -> list[Layer]:
-    animal = name.startswith(('006', '025')) or name in {'JRPG-meowa-watermark', 'tangka', '303401_xingzhiyan_p'}
+def merge_clothes(name: str, layers: list[Layer], info: dict, *, use_example_rules: bool = False) -> list[Layer]:
+    if not use_example_rules and info.get('detected_people', 0) != 1:
+        info.setdefault('warnings', []).append('Clothing retained separately: a single human pose was not confirmed.')
+        return layers
+    animal = use_example_rules and (name.startswith(('006', '025')) or name in {'JRPG-meowa-watermark', 'tangka', '303401_xingzhiyan_p'})
     if animal:
         return layers
     groups = []
-    if name == ARMOUR:
+    if use_example_rules and name == ARMOUR:
         for colour in ('red', 'blue'):
             groups.append((colour+'_clothing', [p for p in layers if p.name == colour+'_torso' or
                 p.name.startswith(colour+'_skirt_') and p.role != 'cloth_inner']))
@@ -688,25 +691,28 @@ def add_whole_alternatives(layers: list[Layer], info: dict) -> list[Layer]:
     return layers
 
 
-def finish(name: str, layers: list[Layer], info: dict, originals: list[Layer]) -> tuple[list[Layer], dict]:
+def finish(name: str, layers: list[Layer], info: dict, originals: list[Layer], *,
+           use_example_rules: bool = False) -> tuple[list[Layer], dict]:
     info = copy.deepcopy(info)
-    if name == '303401_xingzhiyan_p':
+    reviewed_cow = use_example_rules and name == '303401_xingzhiyan_p'
+    if reviewed_cow:
         # The source is a saucer/cow scene. The author's generic human-face
         # prediction is not an actual scene object and must not become visible.
         layers = [p for p in layers if p.name not in {'face', 'eyes'}]
     raw = {p.name: p for p in originals}
     for p in layers:
-        if p.source in raw and not p.meta.get('joint_finish') and name != '303401_xingzhiyan_p':
+        if p.source in raw and not p.meta.get('joint_finish') and not reviewed_cow:
             p.depth = raw[p.source].depth.copy()
-    if name == ENGINEER:
+    if use_example_rules and name == ENGINEER:
         layers = _clean_engineer_face(layers)
         clean_engineer_legs(layers)
-    layers = clean_watermarks(name, layers)
-    repair_reviewed_fragments(name, layers)
-    layers = merge_clothes(name, layers, info)
+    if use_example_rules:
+        layers = clean_watermarks(name, layers)
+        repair_reviewed_fragments(name, layers)
+    layers = merge_clothes(name, layers, info, use_example_rules=use_example_rules)
     info['rounded_limb_pairs'] = round_limb_pairs(layers, info)
     round_whole_attachments(layers)
-    if name == ENGINEER:
+    if use_example_rules and name == ENGINEER:
         repair_engineer_right_boot(layers, info, raw['legwear'])
         finish_engineer_reference(layers, info, raw['legwear'])
         repair_engineer_mechanical_root(layers, raw['handwear'])
@@ -733,6 +739,8 @@ def finish(name: str, layers: list[Layer], info: dict, originals: list[Layer]) -
     for key in ('arms', 'legs'):
         info[key] = [r for r in info.get(key, []) if all(n in names for n in r.get('parts', []))]
     info['whole_limb_layers'] = [p.name for p in layers if p.role in {'arm_whole', 'leg_whole'}]
-    info['method'] = 'Ours Full reused predictions, reviewed rounded interfaces, unified clothing, whole and segmented limbs'
+    info['rule_scope'] = 'reviewed_examples' if use_example_rules else 'generic'
+    info['method'] = ('Ours Full reused predictions, reviewed rounded interfaces, unified clothing, whole and segmented limbs'
+                      if use_example_rules else 'Ours Full with automatic pose and contour refinement; visual review required')
     info['delivery_finish'] = '2026-10-30-reference-standard'
     return layers, info

@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--pose-model", type=Path, default=ROOT / "workspace/models/pose/yolo11s-pose.pt")
     parser.add_argument("--only", nargs="+", help="Only process result subdirectories with these prefixes")
     parser.add_argument("--no-previews", action="store_true")
+    parser.add_argument("--example-rules", action="store_true", help="Opt into filename-specific rules for the previously reviewed examples")
     parser.add_argument("--no-lama", action="store_true", help="Nearest-material preview only, without learned inpainting")
     args = parser.parse_args()
     source = args.input_dir.resolve(strict=True)
@@ -52,7 +53,8 @@ def main() -> int:
         destination = output / (item.relative_to(source) if item != source else Path(item.name)) if output else item / "动画拆层"
         print(f"IMAGE_START {i}/{len(items)} {item.name}", flush=True)
         try:
-            info = refine_for_animation(item, destination, args.pose_model, use_lama=not args.no_lama, previews=not args.no_previews)
+            info = refine_for_animation(item, destination, args.pose_model, use_lama=not args.no_lama,
+                                        previews=not args.no_previews, use_example_rules=args.example_rules)
             print(f"IMAGE_DONE {i}/{len(items)} layers={len(info.get('layers', []))} cloth={len(info['cloth_splits'])} arms={len(info['arms'])} legs={len(info['legs'])} reused={info.get('reused',False)} unchanged={info.get('unchanged',False)} seconds={time.perf_counter()-started:.1f} warnings={info['warnings']}", flush=True)
         except Exception:
             failures += 1

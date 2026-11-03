@@ -21,9 +21,9 @@ REVISION = 1
 PROJECT = Path(__file__).resolve().parents[2]
 
 
-def read_hints(name: str) -> tuple[dict, str]:
+def read_hints(name: str, *, use_example_rules: bool = True) -> tuple[dict, str]:
     path = PROJECT / "workspace/animation_integrity_hints.json"
-    data = path.read_bytes() if path.is_file() else b"{}"
+    data = path.read_bytes() if use_example_rules and path.is_file() else b"{}"
     hints = json.loads(data).get(name, {})
     digest = hashlib.sha256(json.dumps(hints, sort_keys=True).encode()).hexdigest()[:16]
     return hints, digest
@@ -189,9 +189,9 @@ def measure_completeness(target: np.ndarray, layers: list) -> dict:
 
 
 def ensure_complete(src: np.ndarray, originals: list, layers: list, metadata: dict, source: Path,
-                    use_lama: bool = True) -> tuple[list, dict]:
+                    use_lama: bool = True, *, use_example_rules: bool = False) -> tuple[list, dict]:
     from utils.animation_parts import Layer, composite
-    hints, digest = read_hints(source.name)
+    hints, digest = read_hints(source.name, use_example_rules=use_example_rules)
     target, basis = foreground_mask(src, originals, hints)
     before = measure_completeness(target, layers)
     layers, events = _source_instances(src, target, layers, hints, use_lama)

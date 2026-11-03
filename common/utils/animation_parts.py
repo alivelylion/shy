@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import hashlib
 import json
 import math
 
@@ -867,23 +868,30 @@ def _cleanup_stale(output: Path, names: set[str], previous: set[str] | None = No
 
 
 def refine_for_animation(source: str | Path, output: str | Path, pose_model: str | Path | None = None,
-                         use_lama: bool = True, previews: bool = True) -> dict:
+                         use_lama: bool = True, previews: bool = True, *,
+                         use_example_rules: bool = False) -> dict:
     source, output = Path(source).resolve(), Path(output).resolve()
     if output == source:
         raise ValueError("Use the animation subfolder; do not overwrite original semantic PNGs")
     src, originals = load_layers(source)
+    rule_scope = "reviewed_examples" if use_example_rules else "generic"
+    source_digest = hashlib.sha256(src.tobytes()).hexdigest()
     cached = load_refined(output)
+    if cached:
+        previous_scope = cached[1].get("rule_scope", "reviewed_examples")
+        previous_source = cached[1].get("integrity", {}).get("source_sha256")
+        if previous_scope != rule_scope or previous_source not in (None, source_digest):
+            cached = None
     if cached and cached[1].get("refinement_version", 0) >= 5:
         from utils.animation_integrity import REVISION, ensure_complete, foreground_mask, measure_completeness, read_hints
-        import hashlib
-        integrity_hints, hints_digest = read_hints(source.name)
+        integrity_hints, hints_digest = read_hints(source.name, use_example_rules=use_example_rules)
         integrity = cached[1].get("integrity", {})
         target, _ = foreground_mask(src, originals, integrity_hints)
         current_coverage = measure_completeness(target, cached[0])
-        source_digest = hashlib.sha256(src.tobytes()).hexdigest()
         if (integrity.get("revision", 0) < REVISION or integrity.get("hints_digest") != hints_digest
                 or integrity.get("source_sha256") != source_digest or current_coverage["missing_pixels"]):
-            repaired, info = ensure_complete(src, originals, cached[0], cached[1], source, use_lama)
+            repaired, info = ensure_complete(src, originals, cached[0], cached[1], source, use_lama,
+                                             use_example_rules=use_example_rules)
             export_layers(repaired, output, info)
             if previews:
                 save_previews(repaired, output)
@@ -902,6 +910,7 @@ def refine_for_animation(source: str | Path, output: str | Path, pose_model: str
         return {**cached[1], "reused": True}
     layers, metadata = cached if cached else (originals, {"input": str(source), "method": "Ours Full + optional motion refinement", "cloth_splits": [], "arms": [], "ownership_cleanup": [], "warnings": []})
     metadata.update({"completion_method": "author_LaMa" if use_lama else "nearest_material_debug", "legs": [], "instances": [], "refinement_version": 5, "completion_revision": 2})
+    metadata["rule_scope"] = rule_scope
     metadata["warnings"] = []
     if not layers:
         raise ValueError(f"No nonempty layers: {source}")
@@ -911,7 +920,7 @@ def refine_for_animation(source: str | Path, output: str | Path, pose_model: str
     poses = detect_poses(src, pose_path)
     metadata["detected_people"] = len(poses)
     hint_path = PROJECT / "workspace/animation_joint_hints.json"
-    hints = json.loads(hint_path.read_text(encoding="utf-8")).get(source.name, {}) if hint_path.is_file() else {}
+    hints = json.loads(hint_path.read_text(encoding="utf-8")).get(source.name, {}) if use_example_rules and hint_path.is_file() else {}
     metadata["reviewed_joint_hints"] = bool(hints)
     is_character = bool(poses) or hints.get("kind") == "biped"
     garment = next((p for p in layers if p.name == "bottomwear"), None)
@@ -1000,7 +1009,8 @@ def refine_for_animation(source: str | Path, output: str | Path, pose_model: str
         metadata.pop("unchanged", None)
     layers = [p for p in layers if p.mask.any()]
     from utils.animation_integrity import ensure_complete
-    layers, metadata = ensure_complete(src, originals, layers, metadata, source, use_lama)
+    layers, metadata = ensure_complete(src, originals, layers, metadata, source, use_lama,
+                                       use_example_rules=use_example_rules)
     export_layers(layers, output, metadata)
     if previews:
         save_previews(layers, output)

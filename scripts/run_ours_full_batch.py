@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
+import json
 import os
 from pathlib import Path
 import sys
@@ -22,6 +24,29 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
 sys.path.insert(0, str(ROOT / "common"))
 os.chdir(ROOT)
+
+
+def input_fingerprint(source: Path) -> dict:
+    with source.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    return {'sha256': digest, 'recipe': 'ours-full-v0.0.1-seed42-layer1024x30-depth768-auto-v1'}
+
+
+def matches_input(result_dir: Path, fingerprint: dict) -> bool:
+    try:
+        info = json.loads((result_dir / 'info.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return False
+    return isinstance(info, dict) and info.get('inference_input') == fingerprint
+
+
+def store_input_fingerprint(result_dir: Path, fingerprint: dict) -> None:
+    path = result_dir / 'info.json'
+    info = json.loads(path.read_text(encoding='utf-8'))
+    info['inference_input'] = fingerprint
+    temporary = path.with_suffix('.json.tmp')
+    temporary.write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding='utf-8')
+    temporary.replace(path)
 
 
 def main() -> int:
@@ -101,8 +126,14 @@ def main() -> int:
         item_started = time.perf_counter()
         print(f"IMAGE_START {index}/{len(images)} {relative}", flush=True)
         try:
-            layer_ready = all((result_dir / f"{tag}.png").is_file() for tag in tags)
-            depth_ready = all((result_dir / f"{tag}_depth.png").is_file() for tag in tags)
+            fingerprint = input_fingerprint(source)
+            input_matches = matches_input(result_dir, fingerprint)
+            if not input_matches and (result_dir / 'info.json').is_file():
+                # Invalidate the old identity before any PNG is overwritten.
+                # An interrupted replacement must not validate the old cache.
+                store_input_fingerprint(result_dir, {})
+            layer_ready = input_matches and all((result_dir / f"{tag}.png").is_file() for tag in tags)
+            depth_ready = input_matches and all((result_dir / f"{tag}_depth.png").is_file() for tag in tags)
             if not layer_ready:
                 depth_ready = False
                 print(f"STAGE {index}/{len(images)} layer_decomposition", flush=True)
@@ -134,6 +165,7 @@ def main() -> int:
                 image.verify()
             psd = PSDImage.open(psd_path)
             depth_document = PSDImage.open(depth_psd)
+            store_input_fingerprint(result_dir, fingerprint)
             print(
                 f"IMAGE_DONE {index}/{len(images)} seconds={time.perf_counter() - item_started:.2f} "
                 f"psd_layers={len(psd)} depth_layers={len(depth_document)} "

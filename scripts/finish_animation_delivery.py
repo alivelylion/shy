@@ -50,7 +50,7 @@ def main() -> None:
                 continue
             layers, info = read_snapshot(archive, name)
             _, originals = load_layers(source/name)
-            layers, info = finish(name, layers, info, originals)
+            layers, info = finish(name, layers, info, originals, use_example_rules=True)
             export_compact(layers, output/name, info)
             print('FINISH_DONE', i, len(names), name, 'layers', len(layers), flush=True)
 

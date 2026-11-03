@@ -57,7 +57,7 @@ class CompletenessRegressionTests(unittest.TestCase):
             Image.fromarray(face.rgba).save(source / "face.png")
             Image.fromarray(face.depth).save(source / "face_depth.png")
             (source / "info.json").write_text(json.dumps({"parts":{"face":{}}}), encoding="utf-8")
-            info = {"refinement_version":5,"completion_revision":2,"warnings":[],"arms":[],"legs":[],"instances":[],"cloth_splits":[]}
+            info = {"refinement_version":5,"completion_revision":2,"rule_scope":"generic","warnings":[],"arms":[],"legs":[],"instances":[],"cloth_splits":[]}
             export_layers([face], output, info)
             repaired = refine_for_animation(source, output, use_lama=False, previews=False)
             self.assertEqual(repaired["integrity"]["after"]["coverage"], 1.0)

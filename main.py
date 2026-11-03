@@ -101,23 +101,23 @@ def compact_new_results(source: Path, output: Path) -> None:
     from utils.animation_parts import refine_for_animation, load_refined, load_layers
     from utils.animation_finish import finish
     from utils.animation_clean import export_compact
-    from utils.animation_integrity import foreground_mask, read_hints
+    from utils.animation_integrity import foreground_mask
     from utils.animation_special import preserve_visible_source
     items=sorted(p.parent for p in source.rglob('info.json') if (p.parent/'src_img.png').is_file())
     if not items:raise FileNotFoundError(f'未找到原始拆层结果：{source}')
     for item in items:
         intermediate=output.parent/'_refinement'/item.relative_to(source)
-        refine_for_animation(item,intermediate,ROOT/'workspace/models/pose/yolo11s-pose.pt',previews=False)
+        refine_for_animation(item,intermediate,ROOT/'workspace/models/pose/yolo11s-pose.pt',previews=False,use_example_rules=False)
         layers,info=load_refined(intermediate)
         src,originals=load_layers(item)
         remainders=[p for p in layers if p.role=='source_unclassified']
         if remainders:
-            target,_=foreground_mask(src,originals,read_hints(item.name)[0])
+            target,_=foreground_mask(src,originals,{})
             layers=preserve_visible_source(src,[p for p in layers if p not in remainders],target)
             info['source_edge_assignment']={
                 'pixels':sum(int(p.mask.sum()) for p in remainders),
                 'method':'nearest existing part; source pixels retained; anatomical assignment requires review'}
-        layers,info=finish(item.name,layers,info,originals)
+        layers,info=finish(item.name,layers,info,originals,use_example_rules=False)
         export_compact(layers,output/item.relative_to(source),info)
         print(f'ANIMATION_DONE：{output/item.relative_to(source)}',flush=True)
 

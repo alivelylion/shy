@@ -113,7 +113,7 @@ def main() -> int:
         checked = verify_export(src, target, layers, output/item.name)
         if args.repair and checked["errors"]:
             print(f"REPAIR {item.name} errors={checked['errors']}", flush=True)
-            layers, info = ensure_complete(src, originals, layers, info, item)
+            layers, info = ensure_complete(src, originals, layers, info, item, use_example_rules=True)
             info["refinement_version"] = max(5, info.get("refinement_version", 0))
             for key in ("arms","legs","instances","cloth_splits","warnings"):
                 info.setdefault(key, [])
