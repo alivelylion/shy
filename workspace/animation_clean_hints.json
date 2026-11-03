@@ -1,0 +1,41 @@
+{
+  "sc_gen_45206-meowa-watermark": {"integrate_footwear":false},
+  "006喷火龙Ymega": {"subdivide_legs":false},
+  "025皮卡丘": {"subdivide_arms":false,"subdivide_legs":false},
+  "025皮卡丘小智版": {"subdivide_arms":false,"subdivide_legs":false},
+  "078f35a9b6e4f0285f2d2b883e52d57d": {"subdivide_arms":false,"subdivide_legs":false},
+  "16-1-meowa-watermark": {"subdivide_arms":false,"subdivide_legs":false},
+  "300301_hujisheng_p": {"subdivide_legs":false},
+  "301802_wuxingzhe_p": {
+    "legs": [
+      {"name":"leg_image_left","points":[[591,558],[563,733],[545,913],[562,1001]],"provenance":"reviewed_image_coordinates","subdivide":false},
+      {"name":"leg_image_right","points":[[658,559],[636,714],[621,877],[668,935]],"provenance":"reviewed_image_coordinates"}
+    ]
+  },
+  "303401_xingzhiyan_p": {"subdivide_legs":false},
+  "62a3ea887f36c3d5ed44081cf4bdcb1b": {"subdivide_arms":false,"subdivide_legs":false},
+  "sc_gen_7245-meowa-watermark": {"subdivide_arms":false,"subdivide_legs":false},
+  "jimeng-2025-09-20-6385-人设图，oc设定，复杂构图，全身立绘，角色立绘，站姿，二次元少女，长发，迷朦，深": {"subdivide_legs":false},
+  "300602_xiaochunqueer_p": {
+    "arms": [
+      {"name":"arm_image_left","points":[[464,284],[445,403],[430,515],[429,577]],"provenance":"reviewed_image_coordinates"},
+      {"name":"arm_image_right","points":[[637,267],[683,370],[597,409],[559,406]],"provenance":"reviewed_image_coordinates"}
+    ]
+  },
+  "301601_yingerlan_p": {
+    "legs": [
+      {"name":"leg_image_left","points":[[630,549],[597,638],[534,736],[491,812]],"provenance":"reviewed_image_coordinates"},
+      {"name":"leg_image_right","points":[[676,556],[650,667],[609,800],[581,907]],"provenance":"reviewed_image_coordinates"}
+    ]
+  },
+  "301102_malilian_p": {
+    "crossing_legs": {
+      "front_outline": [[454,473],[459,450],[510,445],[550,480],[553,542],[497,585],[456,619],[422,648],[419,659],[431,675],[447,694],[459,721],[464,746],[475,778],[486,811],[487,844],[487,873],[490,908],[497,944],[515,978],[511,1023],[387,1023],[388,946],[428,944],[433,905],[430,855],[419,800],[403,746],[386,701],[363,671],[354,645],[366,612],[377,592],[391,561],[412,525],[431,500]],
+      "back_outline": [[380,449],[415,449],[465,478],[475,530],[458,581],[453,629],[447,650],[460,680],[476,720],[500,778],[515,824],[530,850],[525,898],[503,934],[480,912],[470,847],[447,790],[420,730],[396,680],[387,639],[380,596],[370,544]]
+    },
+    "legs": [
+      {"name":"leg_near","points":[[493,479],[402,650],[455,954],[442,1008]],"provenance":"reviewed_image_coordinates"},
+      {"name":"leg_far","points":[[405,452],[435,655],[505,842],[510,882]],"provenance":"reviewed_image_coordinates"}
+    ]
+  }
+}

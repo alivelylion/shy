@@ -1,0 +1,58 @@
+# ── Credentials & secrets ─────────────────────────────────────────
+hf_credential
+*.token
+.env
+.env.*
+!*.example
+
+# ── Workspace (datasets, model weights) ──────────────────────────
+/workspace/*
+!/workspace/animation_joint_hints.json
+!/workspace/animation_clean_hints.json
+!/workspace/animation_integrity_hints.json
+
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+
+# ── IDE & editors ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+
+# ── OS artifacts ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+
+# ── Misc artifacts ────────────────────────────────────────────────
+tmp/
+*.log
+wandb/
+local_*
+
+# ── Symlink (user creates locally: ln -sf common/assets assets) ──
+/assets
+# end of file
+
+# Project-local copied Python runtime and installed packages
+/.venv/
+
+# Local inputs, outputs, archives and model weights
+/立绘测试/
+/立绘测试结果*/
+/立绘拆分结果/
+/AI全自动骨骼动画生成需求/
+/Ultralytics/
+*.zip
+*.rar
+*.7z
+*.psd
+*.pt
+*.ckpt
+*.safetensors
